@@ -1,0 +1,1443 @@
+[
+  {
+    "id": "two-sum",
+    "title": "Two Sum",
+    "diff": "easy",
+    "pattern": "Hash map",
+    "problem": "Given an array of integers and a target, return indices of two numbers that sum to the target. Each input has exactly one solution; you can't use the same element twice.",
+    "example": "nums = [2,7,11,15], target = 9\noutput = [0,1]   (because 2 + 7 = 9)",
+    "patternChoices": [
+      "Two pointers",
+      "Hash map",
+      "Binary search",
+      "Sliding window",
+      "Dynamic programming",
+      "Sorting"
+    ],
+    "patternReason": {
+      "right": "Hash map turns 'find a pair that sums to target' into 'for each x, has target-x already been seen?' — O(1) lookup per element. Two pointers would require sorting, which destroys the original indices we need to return.",
+      "wrong": {
+        "Two pointers": "Two pointers works for sorted arrays, but sorting destroys the original indices we need to return.",
+        "Binary search": "Binary search needs sorted input and finds one value, not a pair-sum relationship.",
+        "Sliding window": "Sliding window applies to contiguous subarrays. The two answer indices here can be anywhere.",
+        "Sorting": "Sorting alone doesn't solve it, and it breaks the index requirement.",
+        "Dynamic programming": "No overlapping subproblems — single-pass lookup, not a build-up problem."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>The trick: instead of asking <em>'do any two numbers add to target?'</em>, ask <em>'as I walk through the array, has the complement (target − current) already appeared?'</em></p><ol><li>Create an empty hash map: <span class='key'>value → index</span></li><li>Walk through nums. For each <span class='key'>n</span> at index <span class='key'>i</span>, compute <span class='key'>target - n</span>.</li><li>If that complement is already in the map, return <span class='key'>[map[complement], i]</span>.</li><li>Otherwise, add <span class='key'>n → i</span> to the map and continue.</li></ol><p>Each lookup is O(1), so the whole thing runs in one pass.</p>"
+    },
+    "bruteCode": [
+      "def twoSum(nums, target):",
+      "    for i in range(len(nums)):",
+      "        for j in range(i + 1, len(nums)):",
+      "            if nums[i] + nums[j] == target:",
+      "                return [i, j]"
+    ],
+    "bruteTC": "O(n²)",
+    "bruteSC": "O(1)",
+    "optimalCode": [
+      "def twoSum(nums, target):",
+      "    seen = {}",
+      "    for i, n in enumerate(nums):",
+      "        if target - n in seen:",
+      "            return [seen[target - n], i]",
+      "        seen[n] = i"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(n)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Single pass through the array gives O(n) time. Each hash map operation (get, set, contains) is O(1) average. Space is O(n) because the hash map can hold up to n entries in the worst case (when no pair is found until the very end).",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "valid-palindrome",
+    "title": "Valid Palindrome",
+    "diff": "easy",
+    "pattern": "Two pointers",
+    "problem": "Determine if a string is a palindrome, considering only alphanumeric characters and ignoring case.",
+    "example": "s = 'A man, a plan, a canal: Panama'\noutput = True",
+    "patternChoices": [
+      "Two pointers",
+      "Stack",
+      "Hash map",
+      "Recursion",
+      "Sliding window",
+      "Reverse and compare"
+    ],
+    "patternReason": {
+      "right": "Two pointers from both ends inward is the textbook palindrome pattern — O(n) time, O(1) space. You compare mirror positions directly without building anything new.",
+      "wrong": {
+        "Stack": "Works (push first half, pop to compare second half) but uses O(n) extra space for no benefit.",
+        "Hash map": "A hash map counts characters, but a palindrome is about order, not frequency.",
+        "Recursion": "Works but adds O(n) call-stack space and is slower than iterative two-pointer.",
+        "Sliding window": "Sliding windows track properties over a contiguous range. Palindromes need symmetric comparison from both ends.",
+        "Reverse and compare": "Works but uses O(n) extra space to build the reversed string."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Place one pointer at the start and one at the end. Walk them toward the middle, comparing.</p><ol><li>Set <span class='key'>l = 0</span>, <span class='key'>r = len(s) - 1</span>.</li><li>While <span class='key'>l &lt; r</span>: skip non-alphanumeric chars by advancing l or retreating r as needed.</li><li>Compare <span class='key'>s[l].lower()</span> and <span class='key'>s[r].lower()</span>. If they differ, return False.</li><li>Otherwise advance both inward.</li><li>If you make it through, return True.</li></ol><p>No new string, no reversal. Just two indices crawling toward each other.</p>"
+    },
+    "bruteCode": [
+      "def isPalindrome(s):",
+      "    cleaned = ''",
+      "    for c in s:",
+      "        if c.isalnum():",
+      "            cleaned += c.lower()",
+      "    return cleaned == cleaned[::-1]"
+    ],
+    "bruteTC": "O(n)",
+    "bruteSC": "O(n)",
+    "optimalCode": [
+      "def isPalindrome(s):",
+      "    l, r = 0, len(s) - 1",
+      "    while l < r:",
+      "        while l < r and not s[l].isalnum():",
+      "            l += 1",
+      "        while l < r and not s[r].isalnum():",
+      "            r -= 1",
+      "        if s[l].lower() != s[r].lower():",
+      "            return False",
+      "        l += 1",
+      "        r -= 1",
+      "    return True"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(1)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Each character is visited at most once across both pointers — O(n) time. We don't build a new string or use any auxiliary data structure that grows with input — just two integer pointers — so space is O(1).",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "longest-substring",
+    "title": "Longest Substring Without Repeating",
+    "diff": "medium",
+    "pattern": "Sliding window",
+    "problem": "Given a string, find the length of the longest substring without repeating characters.",
+    "example": "s = 'abcabcbb'\noutput = 3   (the substring 'abc')",
+    "patternChoices": [
+      "Sliding window",
+      "Two pointers",
+      "Hash map only",
+      "Dynamic programming",
+      "Brute force substrings",
+      "Trie"
+    ],
+    "patternReason": {
+      "right": "Sliding window: a left and right pointer define a window of unique chars. Right expands; when a duplicate enters, left shrinks until uniqueness is restored. 'Longest contiguous range with property P' = sliding window.",
+      "wrong": {
+        "Two pointers": "Sliding window IS a two-pointer technique, but the canonical name for 'expand right, shrink left to maintain a property' is sliding window.",
+        "Hash map only": "You need a hash map to track chars, but the algorithm is the window movement.",
+        "Dynamic programming": "No overlapping subproblems with reusable answers.",
+        "Brute force substrings": "That's literally the brute force at O(n³).",
+        "Trie": "Tries are for prefix lookups across many strings."
+      }
+    },
+    "approach": {
+      "type": "diagram",
+      "content": "<p>A window <span class='key'>[l, r]</span> over the string holds only unique chars. <span class='key'>r</span> expands greedily; if it pulls in a duplicate, <span class='key'>l</span> shrinks until the duplicate is gone.</p>",
+      "svg": "<svg viewBox='0 0 480 200' xmlns='http://www.w3.org/2000/svg' style='width:100%;max-width:460px;height:auto' role='img'><title>Sliding window over abcabcbb</title><g font-family='ui-monospace,monospace' font-size='20' text-anchor='middle'><rect x='20' y='20' width='40' height='40' rx='4' fill='#9FE1CB' stroke='#0F6E56'/><rect x='60' y='20' width='40' height='40' rx='4' fill='#9FE1CB' stroke='#0F6E56'/><rect x='100' y='20' width='40' height='40' rx='4' fill='#9FE1CB' stroke='#0F6E56'/><rect x='140' y='20' width='40' height='40' rx='4' fill='#F1EFE8' stroke='#888780'/><rect x='180' y='20' width='40' height='40' rx='4' fill='#F1EFE8' stroke='#888780'/><rect x='220' y='20' width='40' height='40' rx='4' fill='#F1EFE8' stroke='#888780'/><rect x='260' y='20' width='40' height='40' rx='4' fill='#F1EFE8' stroke='#888780'/><rect x='300' y='20' width='40' height='40' rx='4' fill='#F1EFE8' stroke='#888780'/><text x='40' y='48' fill='#04342C'>a</text><text x='80' y='48' fill='#04342C'>b</text><text x='120' y='48' fill='#04342C'>c</text><text x='160' y='48' fill='#2C2C2A'>a</text><text x='200' y='48' fill='#2C2C2A'>b</text><text x='240' y='48' fill='#2C2C2A'>c</text><text x='280' y='48' fill='#2C2C2A'>b</text><text x='320' y='48' fill='#2C2C2A'>b</text><text x='40' y='80' font-size='11' fill='#5F5E5A'>l=0</text><text x='120' y='80' font-size='11' fill='#5F5E5A'>r=2</text><text x='180' y='14' font-size='11' fill='#5F5E5A'>↑ window length 3</text></g><g font-family='ui-monospace,monospace' font-size='20' text-anchor='middle'><rect x='20' y='120' width='40' height='40' rx='4' fill='#F1EFE8' stroke='#888780'/><rect x='60' y='120' width='40' height='40' rx='4' fill='#9FE1CB' stroke='#0F6E56'/><rect x='100' y='120' width='40' height='40' rx='4' fill='#9FE1CB' stroke='#0F6E56'/><rect x='140' y='120' width='40' height='40' rx='4' fill='#9FE1CB' stroke='#0F6E56'/><rect x='180' y='120' width='40' height='40' rx='4' fill='#F1EFE8' stroke='#888780'/><rect x='220' y='120' width='40' height='40' rx='4' fill='#F1EFE8' stroke='#888780'/><rect x='260' y='120' width='40' height='40' rx='4' fill='#F1EFE8' stroke='#888780'/><rect x='300' y='120' width='40' height='40' rx='4' fill='#F1EFE8' stroke='#888780'/><text x='40' y='148' fill='#2C2C2A'>a</text><text x='80' y='148' fill='#04342C'>b</text><text x='120' y='148' fill='#04342C'>c</text><text x='160' y='148' fill='#04342C'>a</text><text x='200' y='148' fill='#2C2C2A'>b</text><text x='240' y='148' fill='#2C2C2A'>c</text><text x='280' y='148' fill='#2C2C2A'>b</text><text x='320' y='148' fill='#2C2C2A'>b</text><text x='80' y='180' font-size='11' fill='#5F5E5A'>l=1</text><text x='160' y='180' font-size='11' fill='#5F5E5A'>r=3</text><text x='380' y='148' font-size='11' fill='#5F5E5A'>duplicate, shrink left</text></g></svg>"
+    },
+    "bruteCode": [
+      "def lengthOfLongestSubstring(s):",
+      "    best = 0",
+      "    for i in range(len(s)):",
+      "        seen = set()",
+      "        for j in range(i, len(s)):",
+      "            if s[j] in seen:",
+      "                break",
+      "            seen.add(s[j])",
+      "            best = max(best, j - i + 1)",
+      "    return best"
+    ],
+    "bruteTC": "O(n²)",
+    "bruteSC": "O(n)",
+    "optimalCode": [
+      "def lengthOfLongestSubstring(s):",
+      "    seen = set()",
+      "    l = 0",
+      "    best = 0",
+      "    for r in range(len(s)):",
+      "        while s[r] in seen:",
+      "            seen.remove(s[l])",
+      "            l += 1",
+      "        seen.add(s[r])",
+      "        best = max(best, r - l + 1)",
+      "    return best"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(min(n, charset))",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Each character is added and removed from the set at most once — l only moves forward, so total work is bounded by 2n. Time is O(n). Space is bounded by the size of the character set (e.g., 128 for ASCII) or n if the alphabet is larger than the string — typically written O(min(n, charset)).",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "binary-search",
+    "title": "Binary Search",
+    "diff": "easy",
+    "pattern": "Binary search",
+    "problem": "Given a sorted array and a target, return the index of target, or -1 if not found. Must run in O(log n).",
+    "example": "nums = [-1,0,3,5,9,12], target = 9\noutput = 4",
+    "patternChoices": [
+      "Binary search",
+      "Linear scan",
+      "Two pointers",
+      "Hash map",
+      "Sliding window",
+      "Recursion"
+    ],
+    "patternReason": {
+      "right": "Sorted array + 'find an element' + log-time requirement = binary search. The sorted property lets you eliminate half the search space each step.",
+      "wrong": {
+        "Linear scan": "O(n), violates the log-time requirement.",
+        "Two pointers": "Two pointers usually means converging from both ends to find a pair. Binary search jumps to mid and eliminates halves.",
+        "Hash map": "O(1) lookup but costs O(n) space and time to build, and ignores the sorted structure.",
+        "Sliding window": "For contiguous-range properties. Doesn't fit a single-element search.",
+        "Recursion": "An implementation choice, not the pattern."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Keep two boundaries <span class='key'>l</span> and <span class='key'>r</span>. Each step, look at the middle. The sorted property guarantees the answer is in only ONE half.</p><ol><li>Set <span class='key'>l = 0</span>, <span class='key'>r = len(nums) - 1</span>.</li><li>While <span class='key'>l &lt;= r</span>: compute <span class='key'>m = (l + r) // 2</span>.</li><li>If <span class='key'>nums[m] == target</span>: return m.</li><li>If <span class='key'>nums[m] &lt; target</span>: target is in the right half → <span class='key'>l = m + 1</span>.</li><li>Else: target is in the left half → <span class='key'>r = m - 1</span>.</li><li>Loop ends without finding it: return -1.</li></ol><p>Two off-by-one traps: use <span class='key'>l &lt;= r</span> (not <span class='key'>&lt;</span>), and move past <span class='key'>m</span> with <span class='key'>m+1</span> / <span class='key'>m-1</span>.</p>"
+    },
+    "bruteCode": [
+      "def search(nums, target):",
+      "    for i in range(len(nums)):",
+      "        if nums[i] == target:",
+      "            return i",
+      "    return -1"
+    ],
+    "bruteTC": "O(n)",
+    "bruteSC": "O(1)",
+    "optimalCode": [
+      "def search(nums, target):",
+      "    l, r = 0, len(nums) - 1",
+      "    while l <= r:",
+      "        m = (l + r) // 2",
+      "        if nums[m] == target:",
+      "            return m",
+      "        elif nums[m] < target:",
+      "            l = m + 1",
+      "        else:",
+      "            r = m - 1",
+      "    return -1"
+    ],
+    "optimalTC": "O(log n)",
+    "optimalSC": "O(1)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(√n)"
+    ],
+    "complexityReason": "Time: search space halves each iteration — starting at n, after k iterations there are n/2^k elements. Loop ends when n/2^k = 1, so k = log₂(n). Space: only three integer variables (l, r, m) regardless of input size — O(1).",
+    "complexityRight": "O(log n)"
+  },
+  {
+    "id": "climbing-stairs",
+    "title": "Climbing Stairs",
+    "diff": "easy",
+    "pattern": "Dynamic programming",
+    "problem": "You're climbing a staircase with n steps. Each move you can climb 1 or 2 steps. How many distinct ways to reach the top?",
+    "example": "n = 3\noutput = 3   (1+1+1, 1+2, 2+1)",
+    "patternChoices": [
+      "Dynamic programming",
+      "Backtracking",
+      "Combinatorics",
+      "Recursion + memo",
+      "Greedy",
+      "Math formula"
+    ],
+    "patternReason": {
+      "right": "f(n) = f(n-1) + f(n-2): from step n you came from step n-1 (one step) or step n-2 (two steps). Overlapping subproblems + optimal substructure = DP. Closed form is Fibonacci.",
+      "wrong": {
+        "Backtracking": "Backtracking enumerates and undoes choices. We only need the count, and DP gives it directly.",
+        "Combinatorics": "Possible via combinations of 1s and 2s, but awkward. DP recurrence is the canonical interview answer.",
+        "Recursion + memo": "Memoized recursion IS top-down DP — same complexity, same idea.",
+        "Greedy": "No greedy choice property. Need to count all combinations.",
+        "Math formula": "Closed form (Binet) exists but uses floats and isn't expected."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Ask: <em>how many ways to reach step n?</em> The last move was either +1 (from step n-1) or +2 (from step n-2). So <span class='key'>ways(n) = ways(n-1) + ways(n-2)</span> — Fibonacci.</p><ol><li>Base cases: <span class='key'>ways(0) = 1</span>, <span class='key'>ways(1) = 1</span>.</li><li>For each step from 2 to n, add the previous two.</li><li>Only need the last two values, so use two rolling variables — no array needed.</li></ol><p>This is the simplest DP problem. Recognize the recurrence first, then convert to bottom-up iteration.</p>"
+    },
+    "bruteCode": [
+      "def climbStairs(n):",
+      "    if n <= 1:",
+      "        return 1",
+      "    return climbStairs(n - 1) + climbStairs(n - 2)"
+    ],
+    "bruteTC": "O(2ⁿ)",
+    "bruteSC": "O(n)",
+    "optimalCode": [
+      "def climbStairs(n):",
+      "    a, b = 1, 1",
+      "    for _ in range(n):",
+      "        a, b = b, a + b",
+      "    return a"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(1)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(2ⁿ)",
+      "O(n²)"
+    ],
+    "complexityReason": "Time: a single loop runs n times, each iteration doing constant work — O(n). Space: only two rolling variables (a, b), no array needed — O(1). This is the classic 'reduce DP to two variables' optimization.",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "num-islands",
+    "title": "Number of Islands",
+    "diff": "medium",
+    "pattern": "DFS",
+    "problem": "Given a 2D grid of '1' (land) and '0' (water), count the number of islands. Connected = horizontal/vertical neighbors only.",
+    "example": "grid = [['1','1','0'],\n        ['1','0','0'],\n        ['0','0','1']]\noutput = 2",
+    "patternChoices": [
+      "DFS",
+      "BFS",
+      "Union-find",
+      "Dynamic programming",
+      "Greedy",
+      "Backtracking"
+    ],
+    "patternReason": {
+      "right": "DFS is simplest: for each unvisited '1', recursively mark its connected component, increment count. BFS works equally well; DFS is shorter to write.",
+      "wrong": {
+        "BFS": "BFS works perfectly here too — same O(m·n). Either is correct; DFS is canonical because the recursive code is shorter.",
+        "Union-find": "Works but overkill. Union-find shines for streaming connectivity queries. Static grid → DFS/BFS.",
+        "Dynamic programming": "No optimal substructure for counting components.",
+        "Greedy": "No greedy choice. Must explore each component fully.",
+        "Backtracking": "Backtracking implies undoing choices. We just mark visited and move on."
+      }
+    },
+    "approach": {
+      "type": "diagram",
+      "content": "<p>Scan every cell. When you hit a <span class='key'>'1'</span> you haven't seen, that's a new island — increment count, then DFS to flood-fill its entire component (mark all connected land as visited so you don't double-count).</p>",
+      "svg": "<svg viewBox='0 0 460 200' xmlns='http://www.w3.org/2000/svg' style='width:100%;max-width:440px;height:auto' role='img'><title>Two islands flood-filled by DFS</title><g font-family='ui-monospace,monospace' font-size='14' text-anchor='middle'><rect x='20' y='20' width='40' height='40' rx='3' fill='#9FE1CB' stroke='#0F6E56'/><rect x='60' y='20' width='40' height='40' rx='3' fill='#9FE1CB' stroke='#0F6E56'/><rect x='100' y='20' width='40' height='40' rx='3' fill='#B5D4F4' stroke='#185FA5'/><rect x='20' y='60' width='40' height='40' rx='3' fill='#9FE1CB' stroke='#0F6E56'/><rect x='60' y='60' width='40' height='40' rx='3' fill='#B5D4F4' stroke='#185FA5'/><rect x='100' y='60' width='40' height='40' rx='3' fill='#B5D4F4' stroke='#185FA5'/><rect x='20' y='100' width='40' height='40' rx='3' fill='#B5D4F4' stroke='#185FA5'/><rect x='60' y='100' width='40' height='40' rx='3' fill='#B5D4F4' stroke='#185FA5'/><rect x='100' y='100' width='40' height='40' rx='3' fill='#FAC775' stroke='#854F0B'/><text x='40' y='46' fill='#04342C'>1</text><text x='80' y='46' fill='#04342C'>1</text><text x='120' y='46' fill='#042C53'>0</text><text x='40' y='86' fill='#04342C'>1</text><text x='80' y='86' fill='#042C53'>0</text><text x='120' y='86' fill='#042C53'>0</text><text x='40' y='126' fill='#042C53'>0</text><text x='80' y='126' fill='#042C53'>0</text><text x='120' y='126' fill='#412402'>1</text><text x='220' y='50' font-size='13' fill='#0F6E56' text-anchor='start'>island 1 (3 cells, DFS)</text><text x='220' y='130' font-size='13' fill='#854F0B' text-anchor='start'>island 2 (1 cell, DFS)</text><text x='220' y='90' font-size='13' fill='#185FA5' text-anchor='start'>water (skipped)</text></g></svg>"
+    },
+    "bruteCode": [
+      "# brute and optimal converge here —",
+      "# this is the canonical DFS solution.",
+      "def numIslands(grid):",
+      "    rows, cols = len(grid), len(grid[0])",
+      "    count = 0",
+      "    visited = set()",
+      "    def dfs(r, c):",
+      "        if (r, c) in visited: return",
+      "        if r < 0 or r >= rows or c < 0 or c >= cols: return",
+      "        if grid[r][c] != '1': return",
+      "        visited.add((r, c))",
+      "        dfs(r+1, c); dfs(r-1, c)",
+      "        dfs(r, c+1); dfs(r, c-1)",
+      "    for r in range(rows):",
+      "        for c in range(cols):",
+      "            if grid[r][c] == '1' and (r, c) not in visited:",
+      "                count += 1",
+      "                dfs(r, c)",
+      "    return count"
+    ],
+    "bruteTC": "O(m·n)",
+    "bruteSC": "O(m·n)",
+    "optimalCode": [
+      "def numIslands(grid):",
+      "    rows, cols = len(grid), len(grid[0])",
+      "    count = 0",
+      "    def dfs(r, c):",
+      "        if r < 0 or r >= rows or c < 0 or c >= cols:",
+      "            return",
+      "        if grid[r][c] != '1':",
+      "            return",
+      "        grid[r][c] = '0'",
+      "        dfs(r+1, c); dfs(r-1, c)",
+      "        dfs(r, c+1); dfs(r, c-1)",
+      "    for r in range(rows):",
+      "        for c in range(cols):",
+      "            if grid[r][c] == '1':",
+      "                count += 1",
+      "                dfs(r, c)",
+      "    return count"
+    ],
+    "optimalTC": "O(m·n)",
+    "optimalSC": "O(m·n)",
+    "complexityChoices": [
+      "O(m·n)",
+      "O(m+n)",
+      "O((m·n)²)",
+      "O(m·n log(m·n))",
+      "O(2^(m·n))",
+      "O(m·n·log m)"
+    ],
+    "complexityReason": "Time: each cell is visited at most once across all DFS calls (marked '0' after first visit). Outer loop touches each cell once. Total O(m·n). Space: in the worst case (one big snake-shaped island), the recursion stack holds every cell, giving O(m·n) — that's the dominant space cost.",
+    "complexityRight": "O(m·n)"
+  },
+  {
+    "id": "contains-duplicate",
+    "title": "Contains Duplicate",
+    "diff": "easy",
+    "pattern": "Hash map",
+    "problem": "Given an integer array, return true if any value appears at least twice. Return false if every element is distinct.",
+    "example": "nums = [1,2,3,1]\noutput = True",
+    "patternChoices": [
+      "Hash map",
+      "Two pointers",
+      "Sorting",
+      "Binary search",
+      "Sliding window",
+      "Brute force pairs"
+    ],
+    "patternReason": {
+      "right": "A hash set lets you check 'have I seen this number before?' in O(1). Walk the array once, return True the moment you re-see a value, otherwise False at the end.",
+      "wrong": {
+        "Two pointers": "Two pointers needs sorted input or a converging structure. Here we just need fast lookup, which a set provides without sorting.",
+        "Sorting": "Sort + scan adjacent pairs works in O(n log n), but a hash set gets you O(n) — strictly faster.",
+        "Binary search": "Binary search needs sorted input and finds a value, not duplicates. Wrong shape.",
+        "Sliding window": "No contiguous-range property here — duplicates can be anywhere in the array.",
+        "Brute force pairs": "That's the brute force at O(n²). Hash set beats it."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>The trick is constant-time membership testing. A hash set gives you O(1) 'have I seen this?' checks.</p><ol><li>Create an empty set <span class='key'>seen</span>.</li><li>Walk through nums. For each <span class='key'>n</span>, check if <span class='key'>n in seen</span>.</li><li>If yes → return True (duplicate found).</li><li>Otherwise add <span class='key'>n</span> to <span class='key'>seen</span>.</li><li>If the loop finishes, return False.</li></ol><p>One pass, O(n) time, O(n) extra space.</p>"
+    },
+    "bruteCode": [
+      "def containsDuplicate(nums):",
+      "    for i in range(len(nums)):",
+      "        for j in range(i + 1, len(nums)):",
+      "            if nums[i] == nums[j]:",
+      "                return True",
+      "    return False"
+    ],
+    "bruteTC": "O(n²)",
+    "bruteSC": "O(1)",
+    "optimalCode": [
+      "def containsDuplicate(nums):",
+      "    seen = set()",
+      "    for n in nums:",
+      "        if n in seen:",
+      "            return True",
+      "        seen.add(n)",
+      "    return False"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(n)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Time: one pass through the array, each set operation is O(1) average — O(n). Space: the set can hold up to n elements in the worst case (when no duplicate exists).",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "valid-anagram",
+    "title": "Valid Anagram",
+    "diff": "easy",
+    "pattern": "Hash map",
+    "problem": "Given two strings s and t, return true if t is an anagram of s (same characters with same frequencies).",
+    "example": "s = 'anagram', t = 'nagaram'\noutput = True",
+    "patternChoices": [
+      "Hash map",
+      "Sorting",
+      "Two pointers",
+      "Sliding window",
+      "Bit manipulation",
+      "Trie"
+    ],
+    "patternReason": {
+      "right": "Anagrams have identical character frequencies. A hash map (or fixed-size count array) tallies counts in O(n) and compares — beats sorting's O(n log n).",
+      "wrong": {
+        "Sorting": "Sort both strings and compare — works at O(n log n). Hash map is faster at O(n).",
+        "Two pointers": "Two pointers helps with order-based comparisons. Anagrams are about counts, not order.",
+        "Sliding window": "No window movement — we're comparing two whole strings, not scanning ranges.",
+        "Bit manipulation": "XOR doesn't capture frequency (it cancels duplicates). 'aab' would XOR to 'b' — wrong shape.",
+        "Trie": "Tries handle prefix lookups across many strings. Single-pair comparison doesn't need one."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>If lengths differ, they can't be anagrams. Otherwise count characters in s, decrement for t, and check we land at zero everywhere.</p><ol><li>If <span class='key'>len(s) != len(t)</span>, return False.</li><li>Build a count map of chars in s.</li><li>Walk t. For each char, decrement its count. If a count drops below 0 (or the char isn't in the map), return False.</li><li>If we finish the loop, return True.</li></ol><p>You can also use Python's <span class='key'>Counter(s) == Counter(t)</span> as a one-liner.</p>"
+    },
+    "bruteCode": [
+      "def isAnagram(s, t):",
+      "    return sorted(s) == sorted(t)"
+    ],
+    "bruteTC": "O(n log n)",
+    "bruteSC": "O(n)",
+    "optimalCode": [
+      "def isAnagram(s, t):",
+      "    if len(s) != len(t):",
+      "        return False",
+      "    count = {}",
+      "    for c in s:",
+      "        count[c] = count.get(c, 0) + 1",
+      "    for c in t:",
+      "        if c not in count or count[c] == 0:",
+      "            return False",
+      "        count[c] -= 1",
+      "    return True"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(1)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Time: two single passes over the strings — O(n). Space: the count map holds at most one entry per distinct character. Bounded by alphabet size (26 for lowercase English) — treated as O(1).",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "group-anagrams",
+    "title": "Group Anagrams",
+    "diff": "medium",
+    "pattern": "Hash map",
+    "problem": "Given an array of strings, group the anagrams together. Return groups in any order.",
+    "example": "strs = ['eat','tea','tan','ate','nat','bat']\noutput = [['eat','tea','ate'],['tan','nat'],['bat']]",
+    "patternChoices": [
+      "Hash map",
+      "Sorting",
+      "Trie",
+      "Two pointers",
+      "Sliding window",
+      "Backtracking"
+    ],
+    "patternReason": {
+      "right": "Map each string to a canonical key (sorted chars OR character-count tuple), then bucket into a hash map keyed by that signature. Anagrams collide naturally.",
+      "wrong": {
+        "Sorting": "We sort each string to make a key, but the grouping itself is the hash map operation. The pattern is hash map.",
+        "Trie": "A trie could group by prefix but not by anagram class. Anagrams share characters, not prefixes.",
+        "Two pointers": "No sequential structure to walk — we're bucketing arbitrary strings.",
+        "Sliding window": "No contiguous range. We process whole strings, not windows.",
+        "Backtracking": "Nothing to enumerate or undo. Direct mapping works."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Two strings are anagrams iff their sorted characters are identical. Use that sorted form as a hash key.</p><ol><li>Create an empty dict <span class='key'>groups</span>.</li><li>For each string s, compute the key: <span class='key'>''.join(sorted(s))</span> or a 26-length count tuple.</li><li>Append s to <span class='key'>groups[key]</span>.</li><li>Return <span class='key'>list(groups.values())</span>.</li></ol><p>Using a count tuple is O(n) per string instead of O(n log n) — better when strings are long.</p>"
+    },
+    "bruteCode": [
+      "def groupAnagrams(strs):",
+      "    result = []",
+      "    used = [False] * len(strs)",
+      "    for i, s in enumerate(strs):",
+      "        if used[i]: continue",
+      "        group = [s]",
+      "        used[i] = True",
+      "        for j in range(i + 1, len(strs)):",
+      "            if not used[j] and sorted(strs[j]) == sorted(s):",
+      "                group.append(strs[j])",
+      "                used[j] = True",
+      "        result.append(group)",
+      "    return result"
+    ],
+    "bruteTC": "O(n²·k log k)",
+    "bruteSC": "O(n)",
+    "optimalCode": [
+      "def groupAnagrams(strs):",
+      "    groups = {}",
+      "    for s in strs:",
+      "        key = ''.join(sorted(s))",
+      "        groups.setdefault(key, []).append(s)",
+      "    return list(groups.values())"
+    ],
+    "optimalTC": "O(n·k log k)",
+    "optimalSC": "O(n·k)",
+    "complexityChoices": [
+      "O(n)",
+      "O(n log n)",
+      "O(n·k)",
+      "O(n·k log k)",
+      "O(n²)",
+      "O(n²·k)"
+    ],
+    "complexityReason": "Time: n strings, each costing k log k to sort (k = string length) — O(n·k log k). Using a count tuple instead reduces it to O(n·k). Space: we store every string in the result map, total characters ≈ n·k.",
+    "complexityRight": "O(n·k log k)"
+  },
+  {
+    "id": "top-k-frequent",
+    "title": "Top K Frequent Elements",
+    "diff": "medium",
+    "pattern": "Heap",
+    "problem": "Given an integer array and an integer k, return the k most frequent elements.",
+    "example": "nums = [1,1,1,2,2,3], k = 2\noutput = [1,2]",
+    "patternChoices": [
+      "Heap",
+      "Hash map + bucket sort",
+      "Sorting",
+      "Quick select",
+      "Two pointers",
+      "Trie"
+    ],
+    "patternReason": {
+      "right": "Count frequencies in a hash map, then use a min-heap of size k to track the top k counts in O(n log k). Bucket sort is even better — O(n) — and is the canonical optimal answer here.",
+      "wrong": {
+        "Hash map + bucket sort": "Actually correct and even faster than heap — O(n). Either is acceptable; heap is more commonly taught first.",
+        "Sorting": "Sort by frequency: O(n log n). Heap is faster at O(n log k); bucket sort is O(n).",
+        "Quick select": "Works in average O(n), but worst case O(n²) and harder to write under pressure.",
+        "Two pointers": "No sequential property to exploit. We're ranking by count, not position.",
+        "Trie": "Tries are for string prefixes. Wrong data structure."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Two phases: count frequencies, then pick the k highest.</p><ol><li>Build <span class='key'>count = {num: freq}</span> with one pass.</li><li>For the heap approach: maintain a min-heap of size k. Push <span class='key'>(freq, num)</span> pairs. Pop when size exceeds k. The heap ends with the top k.</li><li>Alternative (bucket sort): create an array <span class='key'>buckets[i]</span> = list of numbers with frequency i. Walk from highest frequency down, collecting until you have k.</li></ol><p>Bucket sort is O(n) — frequencies can't exceed n.</p>"
+    },
+    "bruteCode": [
+      "def topKFrequent(nums, k):",
+      "    count = {}",
+      "    for n in nums:",
+      "        count[n] = count.get(n, 0) + 1",
+      "    sorted_items = sorted(count.items(), key=lambda x: -x[1])",
+      "    return [num for num, _ in sorted_items[:k]]"
+    ],
+    "bruteTC": "O(n log n)",
+    "bruteSC": "O(n)",
+    "optimalCode": [
+      "def topKFrequent(nums, k):",
+      "    count = {}",
+      "    for n in nums:",
+      "        count[n] = count.get(n, 0) + 1",
+      "    buckets = [[] for _ in range(len(nums) + 1)]",
+      "    for num, freq in count.items():",
+      "        buckets[freq].append(num)",
+      "    result = []",
+      "    for i in range(len(buckets) - 1, 0, -1):",
+      "        for num in buckets[i]:",
+      "            result.append(num)",
+      "            if len(result) == k:",
+      "                return result"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(n)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Time: counting is O(n), bucket placement is O(n), and we walk buckets at most n times — O(n) total. Space: count map and bucket array each take O(n).",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "encode-decode-strings",
+    "title": "Encode and Decode Strings",
+    "diff": "medium",
+    "pattern": "String design",
+    "problem": "Design an algorithm to encode a list of strings into a single string, and decode it back. The encoding must handle any characters including delimiters.",
+    "example": "input = ['hello','world','#test']\nencoded = '5#hello5#world5##test'\ndecoded = ['hello','world','#test']",
+    "patternChoices": [
+      "String design",
+      "Two pointers",
+      "Stack",
+      "Hash map",
+      "Backtracking",
+      "Recursion"
+    ],
+    "patternReason": {
+      "right": "Length-prefix encoding: write the length, a delimiter, then the string. The length tells the decoder exactly how many chars to read, immune to any delimiter that appears inside strings.",
+      "wrong": {
+        "Two pointers": "There's a subtle two-pointer feel during decode (one for length-end, one for content), but the core trick is the encoding scheme itself.",
+        "Stack": "No nesting structure here — strings are flat.",
+        "Hash map": "No lookup operation needed; we serialize and deserialize sequentially.",
+        "Backtracking": "Nothing to undo. Linear pass works.",
+        "Recursion": "Iterative parsing is straightforward — no recursive structure to leverage."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Write each string as <span class='key'>length#content</span>. The decoder reads digits up to '#', then takes exactly that many characters as the next string.</p><ol><li>Encode: for each s, append <span class='key'>str(len(s)) + '#' + s</span> to the result.</li><li>Decode: walk the encoded string. Find the next '#' to get the length. Read length characters after '#'. Repeat until end.</li></ol><p>The '#' inside strings is fine because the decoder counts characters, not delimiters.</p>"
+    },
+    "bruteCode": [
+      "# Naive: use a delimiter — fragile if the delimiter appears in the data.",
+      "def encode(strs):",
+      "    return '|'.join(strs)",
+      "def decode(s):",
+      "    return s.split('|')  # BUG: breaks if any string contains '|'"
+    ],
+    "bruteTC": "O(n)",
+    "bruteSC": "O(n)",
+    "optimalCode": [
+      "def encode(strs):",
+      "    return ''.join(str(len(s)) + '#' + s for s in strs)",
+      "",
+      "def decode(s):",
+      "    result = []",
+      "    i = 0",
+      "    while i < len(s):",
+      "        j = i",
+      "        while s[j] != '#':",
+      "            j += 1",
+      "        length = int(s[i:j])",
+      "        result.append(s[j+1 : j+1+length])",
+      "        i = j + 1 + length",
+      "    return result"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(n)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Time: encode/decode each touch every character once — O(n) where n is total characters. Space: output strings/list are O(n) by definition.",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "product-except-self",
+    "title": "Product of Array Except Self",
+    "diff": "medium",
+    "pattern": "Prefix product",
+    "problem": "Given an integer array, return an array where output[i] is the product of all elements except nums[i]. Solve in O(n) without using division.",
+    "example": "nums = [1,2,3,4]\noutput = [24,12,8,6]",
+    "patternChoices": [
+      "Prefix product",
+      "Two pointers",
+      "Hash map",
+      "Dynamic programming",
+      "Math (division)",
+      "Sorting"
+    ],
+    "patternReason": {
+      "right": "Build prefix products (everything to the left of i) and suffix products (everything to the right). result[i] = prefix[i] · suffix[i]. Two passes, no division.",
+      "wrong": {
+        "Two pointers": "Doesn't fit — we need products on both sides of every index, which prefix/suffix arrays handle directly.",
+        "Hash map": "No lookup needed; output is purely positional.",
+        "Dynamic programming": "Prefix products ARE a form of DP, but the textbook label here is prefix product / running product.",
+        "Math (division)": "Total product / nums[i] would work, but division is forbidden — and breaks on zeros anyway.",
+        "Sorting": "Order matters — output is index-aligned. Sorting destroys it."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>For each index i, the answer is (product of left of i) × (product of right of i). Compute these in two sweeps.</p><ol><li>First pass (left → right): <span class='key'>result[i]</span> = product of all <span class='key'>nums[0..i-1]</span>.</li><li>Second pass (right → left): multiply <span class='key'>result[i]</span> by the running product of all elements to the right.</li></ol><p>Space optimization: the result array itself doubles as the prefix array, so only O(1) extra space beyond output.</p>"
+    },
+    "bruteCode": [
+      "def productExceptSelf(nums):",
+      "    n = len(nums)",
+      "    result = [0] * n",
+      "    for i in range(n):",
+      "        prod = 1",
+      "        for j in range(n):",
+      "            if i != j:",
+      "                prod *= nums[j]",
+      "        result[i] = prod",
+      "    return result"
+    ],
+    "bruteTC": "O(n²)",
+    "bruteSC": "O(1)",
+    "optimalCode": [
+      "def productExceptSelf(nums):",
+      "    n = len(nums)",
+      "    result = [1] * n",
+      "    # left pass: result[i] = product of all elements left of i",
+      "    for i in range(1, n):",
+      "        result[i] = result[i-1] * nums[i-1]",
+      "    # right pass: multiply by product of all elements right of i",
+      "    right = 1",
+      "    for i in range(n - 1, -1, -1):",
+      "        result[i] *= right",
+      "        right *= nums[i]",
+      "    return result"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(1)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Time: two linear passes — O(n). Space: O(1) extra (the result array isn't counted as auxiliary space; only the running 'right' variable is).",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "valid-sudoku",
+    "title": "Valid Sudoku",
+    "diff": "medium",
+    "pattern": "Hash map",
+    "problem": "Determine if a 9×9 Sudoku board is valid. Each row, column, and 3×3 sub-box must contain digits 1–9 without repetition. Empty cells are '.'.",
+    "example": "board has digits and '.'s — return True if no row/col/box has a duplicate.",
+    "patternChoices": [
+      "Hash map",
+      "Backtracking",
+      "Bit manipulation",
+      "Brute force",
+      "DFS",
+      "Two pointers"
+    ],
+    "patternReason": {
+      "right": "Maintain three sets-of-sets: one per row, column, and box. For each filled cell, check membership and add. Single pass over 81 cells = O(1).",
+      "wrong": {
+        "Backtracking": "That's for solving Sudoku, not validating it. Validation is a single pass.",
+        "Bit manipulation": "Could use 9-bit masks instead of sets — works, faster constants, but the pattern is still 'track seen values per group'.",
+        "Brute force": "Comparing every cell to every other in its row/col/box is O(n²) when O(n) hash-set check suffices.",
+        "DFS": "No graph or tree structure. Direct membership checks.",
+        "Two pointers": "No converging structure. Each cell is checked independently against its row/col/box."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Three groupings to validate: rows, columns, and 3×3 boxes. Use one set per row, one per column, one per box.</p><ol><li>Initialize 9 empty sets for rows, 9 for columns, 9 for boxes.</li><li>Walk every cell (r, c). If it's '.', skip.</li><li>Compute box index: <span class='key'>(r // 3) * 3 + (c // 3)</span>.</li><li>If the digit is already in <span class='key'>rows[r]</span>, <span class='key'>cols[c]</span>, or <span class='key'>boxes[b]</span>, return False.</li><li>Otherwise add it to all three.</li></ol>"
+    },
+    "bruteCode": [
+      "def isValidSudoku(board):",
+      "    # check each row",
+      "    for row in board:",
+      "        seen = set()",
+      "        for c in row:",
+      "            if c == '.': continue",
+      "            if c in seen: return False",
+      "            seen.add(c)",
+      "    # check each column",
+      "    for c in range(9):",
+      "        seen = set()",
+      "        for r in range(9):",
+      "            v = board[r][c]",
+      "            if v == '.': continue",
+      "            if v in seen: return False",
+      "            seen.add(v)",
+      "    # check each 3x3 box",
+      "    for br in range(3):",
+      "        for bc in range(3):",
+      "            seen = set()",
+      "            for r in range(br*3, br*3+3):",
+      "                for c in range(bc*3, bc*3+3):",
+      "                    v = board[r][c]",
+      "                    if v == '.': continue",
+      "                    if v in seen: return False",
+      "                    seen.add(v)",
+      "    return True"
+    ],
+    "bruteTC": "O(1)",
+    "bruteSC": "O(1)",
+    "optimalCode": [
+      "def isValidSudoku(board):",
+      "    rows = [set() for _ in range(9)]",
+      "    cols = [set() for _ in range(9)]",
+      "    boxes = [set() for _ in range(9)]",
+      "    for r in range(9):",
+      "        for c in range(9):",
+      "            v = board[r][c]",
+      "            if v == '.': continue",
+      "            b = (r // 3) * 3 + (c // 3)",
+      "            if v in rows[r] or v in cols[c] or v in boxes[b]:",
+      "                return False",
+      "            rows[r].add(v)",
+      "            cols[c].add(v)",
+      "            boxes[b].add(v)",
+      "    return True"
+    ],
+    "optimalTC": "O(1)",
+    "optimalSC": "O(1)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n²)",
+      "O(9²)",
+      "O(9!)"
+    ],
+    "complexityReason": "Both time and space are O(1) because the board is fixed at 9×9 = 81 cells regardless of input. We do constant work per cell. If you generalize to N×N, it becomes O(N²) time and space.",
+    "complexityRight": "O(1)"
+  },
+  {
+    "id": "longest-consecutive-sequence",
+    "title": "Longest Consecutive Sequence",
+    "diff": "medium",
+    "pattern": "Hash map",
+    "problem": "Given an unsorted array of integers, find the length of the longest consecutive elements sequence. Solve in O(n).",
+    "example": "nums = [100,4,200,1,3,2]\noutput = 4   (the sequence 1,2,3,4)",
+    "patternChoices": [
+      "Hash map",
+      "Sorting",
+      "Two pointers",
+      "Dynamic programming",
+      "Union-find",
+      "Sliding window"
+    ],
+    "patternReason": {
+      "right": "Put all numbers in a set. For each number that has no predecessor (n-1 not in set), it's the start of a sequence — count forward. Each number is visited at most twice → O(n).",
+      "wrong": {
+        "Sorting": "Sort then scan adjacents — works at O(n log n). Hash set gets O(n).",
+        "Two pointers": "No sorted structure to walk; the array is unordered.",
+        "Dynamic programming": "Could be framed as DP over a set, but the canonical pattern label is 'hash set sequence start'.",
+        "Union-find": "Could group consecutive numbers as components. Works, but heavy machinery for this problem.",
+        "Sliding window": "Numbers aren't contiguous in the array — we're looking for value-consecutive, not index-consecutive."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>The key insight: only count from the start of a sequence. A number n is a sequence start iff <span class='key'>n - 1</span> isn't in the set.</p><ol><li>Build a set <span class='key'>s</span> from nums.</li><li>For each n in the set: if <span class='key'>n - 1 in s</span>, skip — not a sequence start.</li><li>Otherwise, walk forward: count how many of n, n+1, n+2, ... are in s.</li><li>Track the max count.</li></ol><p>The 'skip if n-1 exists' check prevents redundant counting — each number is touched at most twice across the whole run.</p>"
+    },
+    "bruteCode": [
+      "def longestConsecutive(nums):",
+      "    nums = sorted(set(nums))",
+      "    if not nums: return 0",
+      "    best = 1",
+      "    cur = 1",
+      "    for i in range(1, len(nums)):",
+      "        if nums[i] == nums[i-1] + 1:",
+      "            cur += 1",
+      "            best = max(best, cur)",
+      "        else:",
+      "            cur = 1",
+      "    return best"
+    ],
+    "bruteTC": "O(n log n)",
+    "bruteSC": "O(n)",
+    "optimalCode": [
+      "def longestConsecutive(nums):",
+      "    s = set(nums)",
+      "    best = 0",
+      "    for n in s:",
+      "        # only start from a sequence-start",
+      "        if n - 1 in s:",
+      "            continue",
+      "        length = 1",
+      "        while n + length in s:",
+      "            length += 1",
+      "        best = max(best, length)",
+      "    return best"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(n)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Time: although there's a nested while loop, the inner loop only runs for sequence starts, and total inner iterations across all starts equals n — amortized O(n). Space: the set holds n elements.",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "two-sum-ii",
+    "title": "Two Sum II — Input Array Is Sorted",
+    "diff": "medium",
+    "pattern": "Two pointers",
+    "problem": "Given a 1-indexed sorted array of integers, find two numbers that sum to target. Return their 1-indexed positions. Use O(1) extra space.",
+    "example": "numbers = [2,7,11,15], target = 9\noutput = [1,2]",
+    "patternChoices": [
+      "Two pointers",
+      "Hash map",
+      "Binary search",
+      "Sliding window",
+      "Sorting",
+      "Dynamic programming"
+    ],
+    "patternReason": {
+      "right": "The array is sorted AND we need O(1) space. Two pointers from opposite ends: if sum is too big, move right pointer left; too small, move left pointer right. Hash map would work in O(n) time but O(n) space — fails the constraint.",
+      "wrong": {
+        "Hash map": "Works in O(n) time but uses O(n) space. The problem constraint requires O(1) space.",
+        "Binary search": "For each element, binary search the complement — O(n log n). Two pointers does it in O(n).",
+        "Sliding window": "No contiguous-range property. The two answer indices can be far apart.",
+        "Sorting": "The array is already sorted. Sorting again is wasted work.",
+        "Dynamic programming": "No optimal-substructure. Single-pass lookup."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Two pointers leverage the sorted property: the smallest element is on the left, largest on the right. Adjust based on current sum.</p><ol><li>Set <span class='key'>l = 0</span>, <span class='key'>r = len(numbers) - 1</span>.</li><li>While <span class='key'>l &lt; r</span>: compute <span class='key'>s = numbers[l] + numbers[r]</span>.</li><li>If <span class='key'>s == target</span>: return <span class='key'>[l+1, r+1]</span> (1-indexed).</li><li>If <span class='key'>s &lt; target</span>: we need a bigger sum → <span class='key'>l += 1</span>.</li><li>If <span class='key'>s &gt; target</span>: we need a smaller sum → <span class='key'>r -= 1</span>.</li></ol>"
+    },
+    "bruteCode": [
+      "def twoSum(numbers, target):",
+      "    for i in range(len(numbers)):",
+      "        for j in range(i + 1, len(numbers)):",
+      "            if numbers[i] + numbers[j] == target:",
+      "                return [i + 1, j + 1]"
+    ],
+    "bruteTC": "O(n²)",
+    "bruteSC": "O(1)",
+    "optimalCode": [
+      "def twoSum(numbers, target):",
+      "    l, r = 0, len(numbers) - 1",
+      "    while l < r:",
+      "        s = numbers[l] + numbers[r]",
+      "        if s == target:",
+      "            return [l + 1, r + 1]",
+      "        elif s < target:",
+      "            l += 1",
+      "        else:",
+      "            r -= 1"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(1)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Time: pointers converge — at every step one of l or r moves, so they meet within n steps. Space: just two index variables.",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "3sum",
+    "title": "3Sum",
+    "diff": "medium",
+    "pattern": "Two pointers",
+    "problem": "Find all unique triplets in the array that sum to zero. Avoid duplicate triplets in the output.",
+    "example": "nums = [-1,0,1,2,-1,-4]\noutput = [[-1,-1,2], [-1,0,1]]",
+    "patternChoices": [
+      "Two pointers",
+      "Hash map",
+      "Binary search",
+      "Backtracking",
+      "Brute force triple loop",
+      "Dynamic programming"
+    ],
+    "patternReason": {
+      "right": "Sort the array. Fix one element at a time, then two-pointer the rest of the array to find pairs summing to its negation. Sorting + two pointers gives O(n²); skipping duplicates avoids repeats.",
+      "wrong": {
+        "Hash map": "For each pair, check if the complement is in a set — O(n²) time, O(n) space, and dedup is messier than two pointers.",
+        "Binary search": "For each pair, binary search the third — O(n² log n). Slower than two pointers' O(n²).",
+        "Backtracking": "Generates all triples by enumeration — O(n³) and overkill.",
+        "Brute force triple loop": "That's the brute force at O(n³). Two pointers beats it.",
+        "Dynamic programming": "No subproblem reuse."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Reduce 3Sum to many 2Sum-on-sorted problems. Fix one element a; find pairs (b, c) with b + c = -a using two pointers.</p><ol><li>Sort nums.</li><li>For each i from 0 to n-3: if <span class='key'>nums[i] == nums[i-1]</span>, skip (avoid duplicate triplet starts).</li><li>Set <span class='key'>l = i+1</span>, <span class='key'>r = n-1</span>. Target = <span class='key'>-nums[i]</span>.</li><li>Two-pointer search. On match, record triplet, then advance l and r past their duplicates.</li><li>Adjust pointers based on whether sum is too small (l++) or too large (r--).</li></ol>"
+    },
+    "bruteCode": [
+      "def threeSum(nums):",
+      "    n = len(nums)",
+      "    res = set()",
+      "    for i in range(n):",
+      "        for j in range(i + 1, n):",
+      "            for k in range(j + 1, n):",
+      "                if nums[i] + nums[j] + nums[k] == 0:",
+      "                    res.add(tuple(sorted([nums[i], nums[j], nums[k]])))",
+      "    return [list(t) for t in res]"
+    ],
+    "bruteTC": "O(n³)",
+    "bruteSC": "O(n)",
+    "optimalCode": [
+      "def threeSum(nums):",
+      "    nums.sort()",
+      "    res = []",
+      "    n = len(nums)",
+      "    for i in range(n - 2):",
+      "        if i > 0 and nums[i] == nums[i-1]:",
+      "            continue",
+      "        l, r = i + 1, n - 1",
+      "        while l < r:",
+      "            s = nums[i] + nums[l] + nums[r]",
+      "            if s < 0:",
+      "                l += 1",
+      "            elif s > 0:",
+      "                r -= 1",
+      "            else:",
+      "                res.append([nums[i], nums[l], nums[r]])",
+      "                while l < r and nums[l] == nums[l+1]:",
+      "                    l += 1",
+      "                while l < r and nums[r] == nums[r-1]:",
+      "                    r -= 1",
+      "                l += 1",
+      "                r -= 1",
+      "    return res"
+    ],
+    "optimalTC": "O(n²)",
+    "optimalSC": "O(1)",
+    "complexityChoices": [
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(n² log n)",
+      "O(n³)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Time: sorting is O(n log n); the outer loop runs n times, each inner two-pointer pass is O(n) — total O(n²). Space: O(1) ignoring the output (sort is in-place; only constant extra variables).",
+    "complexityRight": "O(n²)"
+  },
+  {
+    "id": "container-with-most-water",
+    "title": "Container With Most Water",
+    "diff": "medium",
+    "pattern": "Two pointers",
+    "problem": "Given an array where each element is the height of a vertical line, find two lines that form a container holding the most water. Return the max area.",
+    "example": "height = [1,8,6,2,5,4,8,3,7]\noutput = 49",
+    "patternChoices": [
+      "Two pointers",
+      "Dynamic programming",
+      "Brute force pairs",
+      "Binary search",
+      "Sliding window",
+      "Greedy"
+    ],
+    "patternReason": {
+      "right": "Two pointers from both ends. Area = min(h[l], h[r]) · (r - l). Move the SHORTER pointer inward — moving the taller one can only ever decrease area. This greedy choice provably finds the max.",
+      "wrong": {
+        "Dynamic programming": "No overlapping subproblems. Pairs are independent.",
+        "Brute force pairs": "Check every (l, r) pair: O(n²). Two pointers does it in O(n).",
+        "Binary search": "No monotonic property over a single dimension we can binary search on.",
+        "Sliding window": "Window-shrink/expand based on a property doesn't fit — we don't grow a contiguous range.",
+        "Greedy": "Two pointers IS a greedy approach here ('always move the shorter side'), but the canonical pattern name is two pointers."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Start with the widest possible container: <span class='key'>l = 0</span>, <span class='key'>r = n-1</span>. Each step, compute area, then move the shorter wall inward — moving the taller one keeps the same min-height and reduces width, so it can't help.</p><ol><li>Set <span class='key'>l = 0</span>, <span class='key'>r = n - 1</span>, <span class='key'>best = 0</span>.</li><li>While <span class='key'>l &lt; r</span>: <span class='key'>area = min(height[l], height[r]) * (r - l)</span>.</li><li>Update <span class='key'>best</span>.</li><li>If <span class='key'>height[l] &lt; height[r]</span>: <span class='key'>l += 1</span>, else <span class='key'>r -= 1</span>.</li></ol>"
+    },
+    "bruteCode": [
+      "def maxArea(height):",
+      "    best = 0",
+      "    n = len(height)",
+      "    for i in range(n):",
+      "        for j in range(i + 1, n):",
+      "            area = min(height[i], height[j]) * (j - i)",
+      "            best = max(best, area)",
+      "    return best"
+    ],
+    "bruteTC": "O(n²)",
+    "bruteSC": "O(1)",
+    "optimalCode": [
+      "def maxArea(height):",
+      "    l, r = 0, len(height) - 1",
+      "    best = 0",
+      "    while l < r:",
+      "        area = min(height[l], height[r]) * (r - l)",
+      "        best = max(best, area)",
+      "        if height[l] < height[r]:",
+      "            l += 1",
+      "        else:",
+      "            r -= 1",
+      "    return best"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(1)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Time: pointers converge — each iteration moves one of them, so the loop runs at most n times. Space: just three variables (l, r, best).",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "trapping-rain-water",
+    "title": "Trapping Rain Water",
+    "diff": "hard",
+    "pattern": "Two pointers",
+    "problem": "Given an array of non-negative heights representing an elevation map, compute how much rainwater is trapped between bars.",
+    "example": "height = [0,1,0,2,1,0,1,3,2,1,2,1]\noutput = 6",
+    "patternChoices": [
+      "Two pointers",
+      "Dynamic programming",
+      "Monotonic stack",
+      "Brute force",
+      "Binary search",
+      "Greedy"
+    ],
+    "patternReason": {
+      "right": "Water above any bar = min(maxLeft, maxRight) - height[i]. Two pointers track running maxes from both ends and process whichever side is currently shorter — that side's max is final, so water can be computed there.",
+      "wrong": {
+        "Dynamic programming": "Precompute leftMax and rightMax arrays — works in O(n) time and O(n) space. Two pointers does it in O(1) space.",
+        "Monotonic stack": "Also a valid O(n) approach — push bars, pop when a taller bar arrives, accumulate water in the dip. Different mental model than two pointers.",
+        "Brute force": "For each bar, scan left and right for max — O(n²). Either two pointers or DP beats it.",
+        "Binary search": "Heights aren't sorted, so binary search has nothing to bisect.",
+        "Greedy": "Two pointers IS greedy ('process the shorter side'), but the canonical name is two pointers."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Water at index i = <span class='key'>min(maxLeft, maxRight) - height[i]</span>. Two pointers track maxes from both ends and process whichever current height is smaller (because that side's max is now finalized).</p><ol><li>Set <span class='key'>l = 0</span>, <span class='key'>r = n-1</span>, <span class='key'>maxL = maxR = 0</span>, <span class='key'>water = 0</span>.</li><li>While <span class='key'>l &lt; r</span>: if <span class='key'>height[l] &lt; height[r]</span>, the left side is the bottleneck:</li><li>&nbsp;&nbsp;Update <span class='key'>maxL = max(maxL, height[l])</span>, add <span class='key'>maxL - height[l]</span> to water, then <span class='key'>l += 1</span>.</li><li>Otherwise mirror on the right side.</li></ol>"
+    },
+    "bruteCode": [
+      "def trap(height):",
+      "    n = len(height)",
+      "    water = 0",
+      "    for i in range(n):",
+      "        maxL = max(height[:i+1])",
+      "        maxR = max(height[i:])",
+      "        water += min(maxL, maxR) - height[i]",
+      "    return water"
+    ],
+    "bruteTC": "O(n²)",
+    "bruteSC": "O(1)",
+    "optimalCode": [
+      "def trap(height):",
+      "    if not height: return 0",
+      "    l, r = 0, len(height) - 1",
+      "    maxL, maxR = 0, 0",
+      "    water = 0",
+      "    while l < r:",
+      "        if height[l] < height[r]:",
+      "            maxL = max(maxL, height[l])",
+      "            water += maxL - height[l]",
+      "            l += 1",
+      "        else:",
+      "            maxR = max(maxR, height[r])",
+      "            water += maxR - height[r]",
+      "            r -= 1",
+      "    return water"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(1)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Time: pointers converge in n steps — O(n). Space: only constant extra variables (l, r, maxL, maxR, water) — O(1).",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "best-time-buy-sell-stock",
+    "title": "Best Time to Buy and Sell Stock",
+    "diff": "easy",
+    "pattern": "Sliding window",
+    "problem": "Given an array of stock prices, find the maximum profit from one buy and one sell. You must buy before you sell.",
+    "example": "prices = [7,1,5,3,6,4]\noutput = 5   (buy at 1, sell at 6)",
+    "patternChoices": [
+      "Sliding window",
+      "Two pointers",
+      "Dynamic programming",
+      "Brute force pairs",
+      "Greedy",
+      "Divide and conquer"
+    ],
+    "patternReason": {
+      "right": "A sliding window with left=cheapest-so-far and right=current-day. When right's price drops below left's, slide left forward (better buying opportunity). Track max (right - left) as you go.",
+      "wrong": {
+        "Two pointers": "Two pointers usually means converging from both ends. Here both pointers move forward — that's a sliding window.",
+        "Dynamic programming": "Can be framed as 1-D DP (track min so far + best profit). Same complexity, similar code. Sliding window is the more direct framing.",
+        "Brute force pairs": "Check every (buy, sell) pair — O(n²). Beaten by O(n) sliding window.",
+        "Greedy": "Sliding window IS the greedy choice here, but the formal pattern is sliding window.",
+        "Divide and conquer": "Possible (O(n log n)), but pointless when O(n) one-pass works."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Track the minimum price seen so far on the left edge of the window. For each new day, profit = current_price - min_so_far.</p><ol><li>Set <span class='key'>min_price = prices[0]</span>, <span class='key'>profit = 0</span>.</li><li>For each price p in prices: update <span class='key'>min_price = min(min_price, p)</span>.</li><li>Update <span class='key'>profit = max(profit, p - min_price)</span>.</li><li>Return profit.</li></ol><p>Single pass, no extra space.</p>"
+    },
+    "bruteCode": [
+      "def maxProfit(prices):",
+      "    best = 0",
+      "    for i in range(len(prices)):",
+      "        for j in range(i + 1, len(prices)):",
+      "            best = max(best, prices[j] - prices[i])",
+      "    return best"
+    ],
+    "bruteTC": "O(n²)",
+    "bruteSC": "O(1)",
+    "optimalCode": [
+      "def maxProfit(prices):",
+      "    min_price = float('inf')",
+      "    profit = 0",
+      "    for p in prices:",
+      "        min_price = min(min_price, p)",
+      "        profit = max(profit, p - min_price)",
+      "    return profit"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(1)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Time: single pass through prices — O(n). Space: only two scalar variables (min_price, profit) — O(1).",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "longest-repeating-char-replacement",
+    "title": "Longest Repeating Character Replacement",
+    "diff": "medium",
+    "pattern": "Sliding window",
+    "problem": "Given a string s and integer k, you can replace any character with another at most k times. Return the length of the longest substring containing the same letter you can produce.",
+    "example": "s = 'AABABBA', k = 1\noutput = 4   (replace one B → 'AABA' or 'ABBA' style)",
+    "patternChoices": [
+      "Sliding window",
+      "Two pointers",
+      "Dynamic programming",
+      "Hash map only",
+      "Greedy",
+      "Backtracking"
+    ],
+    "patternReason": {
+      "right": "A window is valid iff (window_length - max_char_freq) ≤ k — that's the number of replacements needed to make it uniform. Expand right; when invalid, shrink left.",
+      "wrong": {
+        "Two pointers": "Sliding window IS a two-pointer technique, but the canonical name for 'expand-then-shrink to maintain a property' is sliding window.",
+        "Dynamic programming": "No reusable subproblem structure. Direct window movement works.",
+        "Hash map only": "You need a hash map to track character frequencies inside the window, but the algorithm IS the window movement.",
+        "Greedy": "The window movement is greedy, but the formal pattern is sliding window.",
+        "Backtracking": "No choices to undo — we deterministically expand and shrink."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Inside any window, the cheapest way to make it uniform is to keep the most-frequent letter and replace the rest. Replacements needed = window length − max frequency. The window is valid iff this ≤ k.</p><ol><li>Maintain a hash map <span class='key'>count</span> of char → frequency in current window.</li><li>For each right pointer r: increment <span class='key'>count[s[r]]</span>, update <span class='key'>maxFreq</span>.</li><li>If <span class='key'>(r - l + 1) - maxFreq &gt; k</span>: shrink from left — decrement <span class='key'>count[s[l]]</span>, <span class='key'>l += 1</span>.</li><li>Track <span class='key'>best = max(best, r - l + 1)</span>.</li></ol>"
+    },
+    "bruteCode": [
+      "def characterReplacement(s, k):",
+      "    best = 0",
+      "    for i in range(len(s)):",
+      "        count = {}",
+      "        for j in range(i, len(s)):",
+      "            count[s[j]] = count.get(s[j], 0) + 1",
+      "            window = j - i + 1",
+      "            if window - max(count.values()) <= k:",
+      "                best = max(best, window)",
+      "            else:",
+      "                break",
+      "    return best"
+    ],
+    "bruteTC": "O(n²)",
+    "bruteSC": "O(1)",
+    "optimalCode": [
+      "def characterReplacement(s, k):",
+      "    count = {}",
+      "    l = 0",
+      "    maxFreq = 0",
+      "    best = 0",
+      "    for r in range(len(s)):",
+      "        count[s[r]] = count.get(s[r], 0) + 1",
+      "        maxFreq = max(maxFreq, count[s[r]])",
+      "        if (r - l + 1) - maxFreq > k:",
+      "            count[s[l]] -= 1",
+      "            l += 1",
+      "        best = max(best, r - l + 1)",
+      "    return best"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(1)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Time: each character is added once and removed at most once across the whole run — amortized O(n). Space: count map holds at most 26 entries (uppercase letters), so O(1).",
+    "complexityRight": "O(n)"
+  },
+  {
+    "id": "permutation-in-string",
+    "title": "Permutation in String",
+    "diff": "medium",
+    "pattern": "Sliding window",
+    "problem": "Given two strings s1 and s2, return true if s2 contains any permutation of s1 as a substring.",
+    "example": "s1 = 'ab', s2 = 'eidbaooo'\noutput = True   (s2 contains 'ba')",
+    "patternChoices": [
+      "Sliding window",
+      "Hash map",
+      "Sorting",
+      "Two pointers",
+      "Backtracking",
+      "Dynamic programming"
+    ],
+    "patternReason": {
+      "right": "A fixed-size sliding window of length len(s1) over s2. Compare window's char counts to s1's char counts. If they match, we've found a permutation.",
+      "wrong": {
+        "Hash map": "We use one for character counts, but the algorithm is the window movement over s2.",
+        "Sorting": "Generating all permutations of s1 is factorial — terrible. Comparing counts handles all permutations implicitly.",
+        "Two pointers": "Both pointers move forward at the same rate (fixed-size window) — that's sliding window, not converging two pointers.",
+        "Backtracking": "Enumerating permutations explicitly is far too slow — O(k!).",
+        "Dynamic programming": "No subproblem reuse."
+      }
+    },
+    "approach": {
+      "type": "text",
+      "content": "<p>Two strings are permutations iff they have identical character counts. Slide a fixed-size window of <span class='key'>len(s1)</span> across s2 and check counts.</p><ol><li>Build <span class='key'>count1</span> (frequencies in s1) and <span class='key'>count2</span> (frequencies in the first len(s1) chars of s2).</li><li>If <span class='key'>count1 == count2</span>, return True.</li><li>Slide: for each new char <span class='key'>s2[r]</span>, increment its count; for the leaving char <span class='key'>s2[l]</span>, decrement. If counts match, return True.</li><li>Return False if no match found.</li></ol>"
+    },
+    "bruteCode": [
+      "def checkInclusion(s1, s2):",
+      "    from collections import Counter",
+      "    c1 = Counter(s1)",
+      "    k = len(s1)",
+      "    for i in range(len(s2) - k + 1):",
+      "        if Counter(s2[i:i+k]) == c1:",
+      "            return True",
+      "    return False"
+    ],
+    "bruteTC": "O(n·k)",
+    "bruteSC": "O(1)",
+    "optimalCode": [
+      "def checkInclusion(s1, s2):",
+      "    if len(s1) > len(s2): return False",
+      "    c1 = [0] * 26",
+      "    c2 = [0] * 26",
+      "    for i in range(len(s1)):",
+      "        c1[ord(s1[i]) - ord('a')] += 1",
+      "        c2[ord(s2[i]) - ord('a')] += 1",
+      "    if c1 == c2: return True",
+      "    for i in range(len(s1), len(s2)):",
+      "        c2[ord(s2[i]) - ord('a')] += 1",
+      "        c2[ord(s2[i - len(s1)]) - ord('a')] -= 1",
+      "        if c1 == c2:",
+      "            return True",
+      "    return False"
+    ],
+    "optimalTC": "O(n)",
+    "optimalSC": "O(1)",
+    "complexityChoices": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n log n)",
+      "O(n²)",
+      "O(2ⁿ)"
+    ],
+    "complexityReason": "Time: one initial setup pass over s1's length, then one slide pass over s2 — each step does O(26) array comparison, treated as constant — O(n) overall. Space: two fixed 26-length arrays — O(1).",
+    "complexityRight": "O(n)"
+  }
+]
