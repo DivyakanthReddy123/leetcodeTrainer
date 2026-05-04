@@ -10,6 +10,58 @@
   const STATE_KEY = 'lc-trainer-v3'; // unchanged so existing progress carries over
   const LETTERS = 'ABCDEF';
 
+  // Sidebar uses broad NeetCode-style groups so the progress panel stays clean.
+  // Individual problems can keep more specific pattern labels for the quiz itself.
+  const DISPLAY_PATTERN_ORDER = [
+    'Arrays & Hashing',
+    'Two Pointers',
+    'Sliding Window',
+    'Stack',
+    'Binary Search',
+    'Linked List',
+    'Trees',
+    'Trie',
+    'Heap',
+    'Backtracking',
+    'Graphs',
+    'Dynamic Programming',
+    'Greedy',
+    'Intervals',
+    'Math & Geometry',
+    'Bit Manipulation',
+  ];
+
+  function displayPattern(pattern) {
+    return ({
+      'Hash map': 'Arrays & Hashing',
+      'String design': 'Arrays & Hashing',
+      'Prefix product': 'Arrays & Hashing',
+      'Two pointers': 'Two Pointers',
+      'Sliding window': 'Sliding Window',
+      'Stack': 'Stack',
+      'Binary search': 'Binary Search',
+      'Linked list': 'Linked List',
+      'Fast/slow pointers': 'Linked List',
+      'Binary tree DFS': 'Trees',
+      'Binary tree BFS': 'Trees',
+      'Binary search tree': 'Trees',
+      'Trie': 'Trie',
+      'Heap': 'Heap',
+      'DFS backtracking': 'Backtracking',
+      'Backtracking': 'Backtracking',
+      'DFS': 'Graphs',
+      'Graph DFS': 'Graphs',
+      'Graph BFS': 'Graphs',
+      'Dynamic programming': 'Dynamic Programming',
+      '1-D DP': 'Dynamic Programming',
+      '2-D DP': 'Dynamic Programming',
+      'Greedy': 'Greedy',
+      'Intervals': 'Intervals',
+      'Math & Geometry': 'Math & Geometry',
+      'Bit manipulation': 'Bit Manipulation',
+    })[pattern] || pattern;
+  }
+
   // Default stage flow for a problem that doesn't specify its own.
   // Listed by stage TYPE name; each type is registered in STAGE_REGISTRY below.
   const DEFAULT_STAGES = [
@@ -17,13 +69,16 @@
     { type: 'approach' },    // read-only
     { type: 'brute' },       // read-only
     { type: 'optimal' },     // read-only
-    { type: 'complexity' },  // graded (time + space shown together; only time graded for x/2)
+    { type: 'complexity' },  // graded: asks time and space separately
   ];
 
   // ─── state ───────────────────────────────────────────────
   const DEFAULT_STATE = () => ({
-    progress: {},          // { [problemId]: { seen, score } }
-    filter: 'all',
+    progress: {},          // { [problemId]: { seen, score, due, rating } }
+    filter: 'all',             // 'all' | 'easy' | 'medium' | 'hard'
+    expandedDiffs: {},         // sidebar difficulty dropdown state
+    algoProgressOpen: false,  // sidebar algo progress dropdown state
+    mobileMenuOpen: false,     // hamburger drawer state on mobile
     streak: 0,
     lastDay: null,
     todayCount: 0,
@@ -42,8 +97,10 @@
       if (raw) {
         const parsed = JSON.parse(raw);
         state = Object.assign(DEFAULT_STATE(), parsed);
-        // Defensive: ensure skill buckets exist
+        // Defensive: ensure skill buckets and dropdown state exist
         state.skills = Object.assign({ pattern: { r: 0, t: 0 }, complexity: { r: 0, t: 0 } }, state.skills);
+        state.expandedDiffs = state.expandedDiffs || {};
+        state.algoProgressOpen = !!state.algoProgressOpen;
       }
     } catch (_) {
       state = DEFAULT_STATE();
@@ -81,7 +138,8 @@
 
     // Tally skills based on which stage scored what.
     // We bucket by stage TYPE so future stage types can be added without touching this.
-    Object.entries(graded).forEach(([stageIdx, correct]) => {
+    Object.entries(graded).forEach(([gradeKey, correct]) => {
+      const stageIdx = Number(String(gradeKey).split(':')[0]);
       const stage = currentStages()[stageIdx];
       if (!stage) return;
       const bucket = stageSkillBucket(stage.type);
@@ -104,19 +162,53 @@
     })[type] || null;
   }
 
-  // ─── queue ───────────────────────────────────────────────
+  // ─── queue + spaced repetition ───────────────────────────
   let queue = [], qIndex = 0;
-  function buildQueue() {
-    let pool = PROBLEMS.slice();
-    if (state.filter !== 'all') pool = pool.filter(p => p.pattern === state.filter);
-    pool.sort((a, b) => {
-      const pa = getProg(a.id), pb = getProg(b.id);
-      if (pa.seen === 0 && pb.seen > 0) return -1;
-      if (pb.seen === 0 && pa.seen > 0) return 1;
-      return (pa.score || 0) - (pb.score || 0);
-    });
-    queue = pool;
+
+  function shuffle(list) {
+    const arr = list.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function problemsForFilter(filter = state.filter) {
+    return filter === 'all' ? PROBLEMS.slice() : PROBLEMS.filter(p => p.diff === filter);
+  }
+
+  function isDue(problem) {
+    const due = getProg(problem.id).due;
+    return !due || due <= Date.now();
+  }
+
+  function buildQueue(avoidId = null) {
+    const pool = problemsForFilter();
+    let duePool = pool.filter(isDue);
+
+    // If everything is scheduled for later, still allow practice from the full pool.
+    let selectedPool = duePool.length ? duePool : pool;
+
+    // Avoid immediately repeating the same card when possible.
+    if (avoidId && selectedPool.length > 1) {
+      selectedPool = selectedPool.filter(p => p.id !== avoidId);
+    }
+
+    queue = shuffle(selectedPool);
     qIndex = 0;
+  }
+
+  function jumpToProblem(problemId, filter = state.filter) {
+    state.filter = filter;
+    const pool = problemsForFilter(filter);
+    const selected = PROBLEMS.find(p => p.id === problemId);
+    if (!selected) return;
+    queue = [selected, ...shuffle(pool.filter(p => p.id !== problemId))];
+    qIndex = 0;
+    resetCard();
+    saveState();
+    render();
   }
 
   // ─── card runtime ────────────────────────────────────────
@@ -169,7 +261,27 @@
   }
 
   function nextProblem() {
-    qIndex = (qIndex + 1) % Math.max(queue.length, 1);
+    const currentId = currentProblem() && currentProblem().id;
+    buildQueue(currentId);
+    resetCard();
+    render();
+  }
+
+  function rateProblem(rating) {
+    const prob = currentProblem();
+    if (!prob) return;
+    const delays = {
+      again: 60 * 1000,
+      hard: 6 * 60 * 1000,
+      good: 24 * 60 * 60 * 1000,
+      easy: 4 * 24 * 60 * 60 * 1000,
+    };
+    const p = getProg(prob.id);
+    p.rating = rating;
+    p.due = Date.now() + (delays[rating] || delays.good);
+    state.progress[prob.id] = p;
+    saveState();
+    buildQueue(prob.id);
     resetCard();
     render();
   }
@@ -209,19 +321,22 @@
     return out;
   }
 
-  function renderCodeBlock(lines, tc, sc) {
+  function renderCodeBlock(lines, tc, sc, showComplexity = false) {
     const code = lines.map((line, i) => `
       <div class="code-line">
         <span class="code-num">${i + 1}</span>
         <span class="code-text">${highlightLine(line)}</span>
       </div>
     `).join('');
-    return `
-      <div class="code-block">${code}</div>
+    const complexity = showComplexity ? `
       <div class="tc-row">
         <span class="tc-pill"><span class="tc-label">Time</span><span class="tc-val">${esc(tc)}</span></span>
         <span class="tc-pill"><span class="tc-label">Space</span><span class="tc-val">${esc(sc)}</span></span>
       </div>
+    ` : '';
+    return `
+      <div class="code-block">${code}</div>
+      ${complexity}
     `;
   }
 
@@ -367,7 +482,7 @@
         return {
           html: `
             <p class="stage-label">Brute force</p>
-            ${renderCodeBlock(problem.bruteCode, problem.bruteTC, problem.bruteSC)}
+            ${renderCodeBlock(problem.bruteCode, problem.bruteTC, problem.bruteSC, true)}
             <div class="nav">
               <button class="btn ghost" data-action="back">← Back</button>
               <button class="btn primary" data-action="next">Next →</button>
@@ -403,35 +518,51 @@
       }
     },
 
-    // ─── complexity (graded — time only, space shown for context) ─────
+    // ─── complexity (graded — time and space as separate parts) ─────
     complexity: {
       label: 'Complexity',
       graded: true,
       render({ problem }) {
-        const right = problem.complexityRight || problem.optimalTC;
-        const choices = problem.complexityChoices.map((c, i) => `
-          <button class="choice mono" data-pick="${esc(c)}">
+        const rightTime = problem.complexityRight || problem.optimalTC;
+        const rightSpace = problem.spaceRight || problem.optimalSC;
+        const timeChoices = problem.complexityChoices.map((c, i) => `
+          <button class="choice mono" data-kind="time" data-pick="${esc(c)}">
+            <span class="letter">${LETTERS[i]}</span>${esc(c)}
+          </button>
+        `).join('');
+        const spaceChoices = (problem.spaceChoices || ['O(1)','O(log n)','O(n)','O(n log n)','O(n²)']).map((c, i) => `
+          <button class="choice mono" data-kind="space" data-pick="${esc(c)}">
             <span class="letter">${LETTERS[i]}</span>${esc(c)}
           </button>
         `).join('');
         return {
           html: `
             <p class="stage-label">What is the time complexity of the optimal solution?</p>
-            <div class="choice-list" data-state="picking">${choices}</div>
+            <div class="choice-list complexity-part" data-kind="time" data-state="picking">${timeChoices}</div>
+
+            <p class="stage-label complexity-second-label">What is the space complexity of the optimal solution?</p>
+            <div class="choice-list complexity-part" data-kind="space" data-state="picking">${spaceChoices}</div>
+
             <div class="callout-slot"></div>
             <div class="nav">
               <button class="btn primary" data-action="submit" disabled>Submit →</button>
             </div>
           `,
           wire(root) {
-            let selected = null;
+            let selectedTime = null;
+            let selectedSpace = null;
             let submitted = false;
-            const choiceList = root.querySelector('[data-state]');
             const submitBtn = root.querySelector('[data-action]');
 
+            function selectedFor(kind) { return kind === 'time' ? selectedTime : selectedSpace; }
+            function rightFor(kind) { return kind === 'time' ? rightTime : rightSpace; }
+
             function paintChoices() {
-              [...choiceList.querySelectorAll('.choice')].forEach(b => {
+              [...root.querySelectorAll('.choice')].forEach(b => {
+                const kind = b.dataset.kind;
                 const c = b.dataset.pick;
+                const selected = selectedFor(kind);
+                const right = rightFor(kind);
                 b.classList.remove('selected', 'correct', 'wrong');
                 if (submitted) {
                   if (c === right) b.classList.add('correct');
@@ -443,39 +574,44 @@
               });
             }
 
-            choiceList.addEventListener('click', (ev) => {
+            root.addEventListener('click', (ev) => {
               const btn = ev.target.closest('.choice');
               if (!btn || submitted) return;
-              selected = btn.dataset.pick;
-              submitBtn.disabled = false;
+              if (btn.dataset.kind === 'time') selectedTime = btn.dataset.pick;
+              if (btn.dataset.kind === 'space') selectedSpace = btn.dataset.pick;
+              submitBtn.disabled = !(selectedTime && selectedSpace);
               paintChoices();
             });
 
             submitBtn.addEventListener('click', () => {
               if (!submitted) {
-                if (!selected) return;
+                if (!selectedTime || !selectedSpace) return;
                 submitted = true;
                 paintChoices();
                 renderCallout();
                 submitBtn.textContent = 'See summary →';
               } else {
-                advance({ [card.idx]: selected === right });
+                advance({
+                  [`${card.idx}:time`]: selectedTime === rightTime,
+                  [`${card.idx}:space`]: selectedSpace === rightSpace,
+                });
               }
             });
 
             function renderCallout() {
-              const isCorrect = selected === right;
+              const timeCorrect = selectedTime === rightTime;
+              const spaceCorrect = selectedSpace === rightSpace;
               const slot = root.querySelector('.callout-slot');
               slot.innerHTML = `
-                <div class="callout ${isCorrect ? 'right' : 'miss'}">
+                <div class="callout ${timeCorrect && spaceCorrect ? 'right' : 'miss'}">
                   <div class="tc-row" style="margin-bottom:10px">
                     <span class="tc-pill">
                       <span class="tc-label">Time</span>
-                      <span class="tc-val" style="color:${isCorrect ? 'var(--green)' : 'var(--red)'}">${esc(right)}</span>
+                      <span class="tc-val" style="color:${timeCorrect ? 'var(--green)' : 'var(--red)'}">${esc(rightTime)}</span>
                     </span>
                     <span class="tc-pill">
                       <span class="tc-label">Space</span>
-                      <span class="tc-val" style="color:var(--green)">${esc(problem.optimalSC)}</span>
+                      <span class="tc-val" style="color:${spaceCorrect ? 'var(--green)' : 'var(--red)'}">${esc(rightSpace)}</span>
                     </span>
                   </div>
                   <p class="callout-text">${esc(problem.complexityReason)}</p>
@@ -490,22 +626,37 @@
   };
 
   // ─── card renderers ──────────────────────────────────────
+  function gradeItemsForSummary(stages) {
+    const items = [];
+    stages.forEach((s, i) => {
+      if (!STAGE_REGISTRY[s.type] || !STAGE_REGISTRY[s.type].graded) return;
+      if (s.type === 'complexity') {
+        items.push({ key: `${i}:time`, label: 'Time complexity' });
+        items.push({ key: `${i}:space`, label: 'Space complexity' });
+      } else {
+        items.push({ key: String(i), label: STAGE_REGISTRY[s.type].label });
+      }
+    });
+    return items;
+  }
+
+  function totalGradedForStages(stages) {
+    return gradeItemsForSummary(stages).length;
+  }
+
   function renderSummary() {
     const stages = currentStages();
-    const gradedStages = stages
-      .map((s, i) => ({ s, i }))
-      .filter(({ s }) => STAGE_REGISTRY[s.type] && STAGE_REGISTRY[s.type].graded);
+    const gradedItems = gradeItemsForSummary(stages);
 
-    const totalGraded = gradedStages.length;
-    const correctCount = gradedStages.reduce((acc, { i }) => acc + (card.graded[i] ? 1 : 0), 0);
+    const totalGraded = gradedItems.length;
+    const correctCount = gradedItems.reduce((acc, item) => acc + (card.graded[item.key] ? 1 : 0), 0);
 
-    const items = gradedStages.map(({ s, i }) => {
-      const correct = !!card.graded[i];
-      const label = STAGE_REGISTRY[s.type].label;
+    const items = gradedItems.map(item => {
+      const correct = !!card.graded[item.key];
       return `
         <div class="summary-item ${correct ? 'right' : 'miss'}">
           <div class="sym">${correct ? '✓' : '✗'}</div>
-          <div class="name">${esc(label)}</div>
+          <div class="name">${esc(item.label)}</div>
         </div>
       `;
     }).join('');
@@ -515,9 +666,16 @@
         <div class="summary-score">${correctCount}/${totalGraded}</div>
         <p class="summary-sub">Score for this problem</p>
         <div class="summary-items">${items}</div>
+        <div class="anki-rating">
+          <div class="anki-label">How did it go?</div>
+          <button class="anki-btn again" data-rating="again"><span>Again</span><small>&lt; 1 min</small></button>
+          <button class="anki-btn hard" data-rating="hard"><span>Hard</span><small>6 min</small></button>
+          <button class="anki-btn good" data-rating="good"><span>Good</span><small>1 day</small></button>
+          <button class="anki-btn easy" data-rating="easy"><span>Easy</span><small>4 days</small></button>
+        </div>
         <div class="summary-actions">
           <button class="btn ghost" data-action="retry">↺ Retry</button>
-          <button class="btn primary" data-action="next-problem">Next problem →</button>
+          <button class="btn primary" data-action="next-problem">Skip rating →</button>
         </div>
       </div>
     `;
@@ -530,7 +688,10 @@
       if (i < card.idx) {
         // done — graded stages get right/wrong, others neutral
         if (STAGE_REGISTRY[s.type] && STAGE_REGISTRY[s.type].graded) {
-          cls += card.graded[i] ? ' done right' : ' done wrong';
+          const ok = s.type === 'complexity'
+            ? card.graded[`${i}:time`] && card.graded[`${i}:space`]
+            : card.graded[i];
+          cls += ok ? ' done right' : ' done wrong';
         } else {
           cls += ' done neutral';
         }
@@ -544,7 +705,7 @@
   function renderProblemHeader(prob) {
     const pr = getProg(prob.id);
     const stages = currentStages();
-    const totalGraded = stages.filter(s => STAGE_REGISTRY[s.type]?.graded).length;
+    const totalGraded = totalGradedForStages(stages);
     const seenTag = pr.seen
       ? `Seen ${pr.seen}× · last ${pr.score || 0}/${totalGraded}`
       : 'New';
@@ -588,10 +749,14 @@
 
     return {
       html: `
-        <div class="card">
-          ${renderPips()}
-          ${renderProblemHeader(prob)}
-          <div class="stage-host${animClass}">${stageHtml}</div>
+        <div class="card split-card">
+          <aside class="question-pane">
+            ${renderProblemHeader(prob)}
+          </aside>
+          <section class="stage-pane">
+            ${renderPips()}
+            <div class="stage-host${animClass}">${stageHtml}</div>
+          </section>
         </div>
       `,
       wire(host) {
@@ -599,6 +764,9 @@
         if (isSummary) {
           host.querySelector('[data-action="retry"]').onclick = retryProblem;
           host.querySelector('[data-action="next-problem"]').onclick = nextProblem;
+          host.querySelectorAll('[data-rating]').forEach(btn => {
+            btn.onclick = () => rateProblem(btn.dataset.rating);
+          });
         } else if (wire) {
           wire(stageHost);
         }
@@ -610,6 +778,7 @@
     const totalSeen = Object.values(state.progress).filter(p => p.seen > 0).length;
     return `
       <div class="topbar-left">
+        <button class="mobile-menu-btn" data-mobile-menu aria-label="Open progress menu">☰</button>
         <span class="streak-badge">🔥 ${state.streak}-day streak</span>
         <span class="today-badge">${state.todayCount} done today</span>
       </div>
@@ -631,14 +800,71 @@
       `;
     };
 
-    const patterns = ['all', ...new Set(PROBLEMS.map(p => p.pattern))];
-    const pills = patterns.map(p => `
-      <button class="sb-pill${state.filter === p ? ' active' : ''}" data-filter="${esc(p)}">
-        ${esc(p === 'all' ? 'All' : p)}
-      </button>
-    `).join('');
+    const groupedPatterns = PROBLEMS.reduce((acc, prob) => {
+      const group = displayPattern(prob.pattern);
+      if (!acc[group]) acc[group] = [];
+      acc[group].push(prob);
+      return acc;
+    }, {});
+
+    const patternProgress = Object.keys(groupedPatterns)
+      .sort((a, b) => {
+        const ai = DISPLAY_PATTERN_ORDER.indexOf(a);
+        const bi = DISPLAY_PATTERN_ORDER.indexOf(b);
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi) || a.localeCompare(b);
+      })
+      .map(group => {
+        const matching = groupedPatterns[group];
+        const total = matching.length;
+        const seen = matching.filter(p => getProg(p.id).seen > 0).length;
+        const pct = total ? Math.round((seen / total) * 100) : 0;
+        return `
+          <div class="sb-skill algo-progress">
+            <div class="sb-skill-row"><span>${esc(group)}</span><span>${seen}/${total}</span></div>
+            <div class="sb-skill-bar"><div class="sb-skill-fill" style="width:${pct}%"></div></div>
+          </div>
+        `;
+      }).join('');
+
+    const difficulties = ['all', 'easy', 'medium', 'hard'];
+    if (!difficulties.includes(state.filter)) state.filter = 'all';
+    const difficultyProgress = difficulties.map(d => {
+      const label = d === 'all' ? 'All' : d[0].toUpperCase() + d.slice(1);
+      const matching = d === 'all' ? PROBLEMS : PROBLEMS.filter(p => p.diff === d);
+      const total = matching.length;
+      const seen = matching.filter(p => getProg(p.id).seen > 0).length;
+      const pct = total ? Math.round((seen / total) * 100) : 0;
+      const expanded = !!state.expandedDiffs[d];
+      const list = expanded ? `
+        <div class="difficulty-problem-list">
+          ${matching.map(prob => `
+            <button class="difficulty-problem" data-problem-id="${esc(prob.id)}" data-problem-filter="${esc(d)}">
+              <span>${esc(prob.title)}</span>
+              <small>${getProg(prob.id).seen ? `last ${getProg(prob.id).score || 0}/3` : 'new'}</small>
+            </button>
+          `).join('')}
+        </div>
+      ` : '';
+      return `
+        <div class="difficulty-group ${expanded ? 'expanded' : ''}">
+          <div class="difficulty-progress-row ${state.filter === d ? ' active' : ''}">
+            <button class="difficulty-main diff-filter" data-filter="${esc(d)}">
+              <div class="sb-skill-row"><span>${esc(label)}</span><span>${seen}/${total}</span></div>
+              <div class="sb-skill-bar"><div class="sb-skill-fill" style="width:${pct}%"></div></div>
+            </button>
+            <button class="difficulty-toggle" data-toggle-diff="${esc(d)}" aria-label="Show ${esc(label)} problems">${expanded ? '⌄' : '›'}</button>
+          </div>
+          ${list}
+        </div>
+      `;
+    }).join('');
 
     return `
+      <div class="sidebar-mobile-head">
+        <span>Progress</span>
+        <button class="sidebar-close" data-close-mobile-menu aria-label="Close progress menu">×</button>
+      </div>
+
       <div class="sb-section sb-mobile-collapse">Activity</div>
       <div class="sb-stat sb-mobile-collapse"><span>Streak</span><span class="sb-stat-val streak">🔥 ${state.streak}</span></div>
       <div class="sb-stat sb-mobile-collapse"><span>Today</span><span class="sb-stat-val">${state.todayCount} done</span></div>
@@ -650,15 +876,26 @@
         ${skillRow('Complexity', 'complexity')}
       </div>
 
-      <div class="sb-section sb-mobile-collapse">Filter</div>
-      <div class="sb-pills sb-mobile-pills-row">${pills}</div>
+      <div class="sb-section">Difficulty</div>
+      <div class="difficulty-progress">${difficultyProgress}</div>
+
+      <div class="algo-progress-header">
+        <div class="sb-section">Algo Progress</div>
+        <button class="algo-progress-toggle" data-toggle-algo aria-label="Show algo progress">${state.algoProgressOpen ? '⌄' : '›'}</button>
+      </div>
+      <div class="algo-progress-body ${state.algoProgressOpen ? 'open' : ''}">
+        <div class="sb-algo-progress">${patternProgress}</div>
+      </div>
     `;
   }
 
   // ─── render orchestration ────────────────────────────────
   function render() {
     document.getElementById('topbar').innerHTML = renderTopbar();
-    document.getElementById('sidebar').innerHTML = renderSidebar();
+    const sidebarEl = document.getElementById('sidebar');
+    sidebarEl.innerHTML = renderSidebar();
+    sidebarEl.classList.toggle('open', !!state.mobileMenuOpen);
+    document.body.classList.toggle('mobile-menu-open', !!state.mobileMenuOpen);
     const host = document.getElementById('card-host');
     const result = renderCard();
     if (typeof result === 'string') {
@@ -668,13 +905,55 @@
       result.wire(host);
     }
 
-    // Wire sidebar pill clicks
+    // Wire sidebar difficulty row clicks. Main row selects a random card; chevron opens the list.
     document.querySelectorAll('[data-filter]').forEach(b => {
       b.onclick = () => {
         state.filter = b.dataset.filter;
-        buildQueue();
+        state.mobileMenuOpen = false;
+        buildQueue(currentProblem() && currentProblem().id);
         resetCard();
         saveState();
+        render();
+      };
+    });
+
+    document.querySelectorAll('[data-toggle-diff]').forEach(b => {
+      b.onclick = (ev) => {
+        ev.stopPropagation();
+        const key = b.dataset.toggleDiff;
+        state.expandedDiffs[key] = !state.expandedDiffs[key];
+        saveState();
+        render();
+      };
+    });
+
+
+    document.querySelectorAll('[data-toggle-algo]').forEach(b => {
+      b.onclick = (ev) => {
+        ev.stopPropagation();
+        state.algoProgressOpen = !state.algoProgressOpen;
+        saveState();
+        render();
+      };
+    });
+
+    document.querySelectorAll('[data-problem-id]').forEach(b => {
+      b.onclick = () => {
+        state.mobileMenuOpen = false;
+        jumpToProblem(b.dataset.problemId, b.dataset.problemFilter);
+      };
+    });
+
+    document.querySelectorAll('[data-mobile-menu]').forEach(b => {
+      b.onclick = () => {
+        state.mobileMenuOpen = true;
+        render();
+      };
+    });
+
+    document.querySelectorAll('[data-close-mobile-menu]').forEach(b => {
+      b.onclick = () => {
+        state.mobileMenuOpen = false;
         render();
       };
     });
